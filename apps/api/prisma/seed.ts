@@ -10,6 +10,8 @@ const PROD = process.env.NODE_ENV === 'production';
 // Chạy thật (Render): seed chạy lại mỗi lần deploy nên KHÔNG ghi đè sản phẩm admin đã sửa; muốn đưa về mẫu ban đầu thì đặt SEED_RESET=1
 // SEED_DEMO=off: bỏ khách mẫu và thiệp mẫu (CI dùng để test chạy trên DB sạch)
 const DEMO = process.env.SEED_DEMO !== 'off';
+// SEED_RESET_PASSWORDS=1: đặt lại mật khẩu admin và khách mẫu theo ADMIN_PASSWORD / DEMO_USER_PASSWORD (dùng khi quên mật khẩu hoặc đổi biến sau lần tạo đầu), dùng xong nên bỏ biến
+const RESET_PW = process.env.SEED_RESET_PASSWORDS === '1';
 const REFRESH = process.env.SEED_RESET === '1' || !PROD;
 
 // Thiệp mẫu để khách chọn thử (admin sửa/xoá trong tab Thiệp)
@@ -142,7 +144,7 @@ async function main() {
   if (!adminPw) throw new Error('Thiếu ADMIN_PASSWORD (bắt buộc khi chạy thật)');
   const email = (process.env.ADMIN_EMAIL ?? 'admin@florahub.vn').toLowerCase();
   await prisma.user.upsert({
-    where: { email }, update: {},
+    where: { email }, update: RESET_PW ? { passwordHash: await bcrypt.hash(adminPw, 10) } : {},
     create: { email, fullName: 'Quản trị Florea', role: 'ADMIN', passwordHash: await bcrypt.hash(adminPw, 10) },
   });
 
@@ -151,14 +153,14 @@ async function main() {
   const demoPw = process.env.DEMO_USER_PASSWORD ?? (PROD ? '' : 'Khach@123456');
   if (demoPw && DEMO) {
     await prisma.user.upsert({
-      where: { email: demoEmail }, update: {},
+      where: { email: demoEmail }, update: RESET_PW ? { passwordHash: await bcrypt.hash(demoPw, 10) } : {},
       create: { email: demoEmail, fullName: 'Khách Thử Nghiệm', role: 'CUSTOMER', passwordHash: await bcrypt.hash(demoPw, 10), phone: '0900000000' },
     });
     console.log('Khách mẫu:', demoEmail);
   } else console.log('Bỏ qua tạo khách mẫu (chưa đặt DEMO_USER_PASSWORD hoặc SEED_DEMO=off)');
 
   if (DEMO && (await prisma.cardType.count()) === 0) await prisma.cardType.createMany({ data: cardSamples.map((c, sort) => ({ ...c, sort })) });
-  console.log('Seed xong. Admin:', email);
+  console.log('Seed xong. Admin:', email, RESET_PW ? '(đã đặt lại mật khẩu theo biến môi trường)' : '');
 }
 
 main().finally(() => prisma.$disconnect());

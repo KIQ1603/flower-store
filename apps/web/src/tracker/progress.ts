@@ -503,6 +503,8 @@ export const milestones: Milestone[] = [
           k("Thiệp: admin tab Thiệp (tên, giá, ảnh, bật/tắt); khách chỉ thấy mục thiệp khi shop có thiệp đang bán, chọn mẫu + lời nhắn, tổng tiền tính theo cấu hình, đơn lưu ảnh chụp tên/giá thiệp", "API", true),
           k("Mã giảm giá: giỏ hàng bỏ ô nhập mã, chọn/nhập mã ở bước thanh toán (liệt kê mọi mã khách đã đổi); admin chia 2 tab: mã của shop (tạo/sửa/xoá) và mã khách đổi điểm (chỉ xem)", "Admin", true),
           k("Admin cấu hình thông tin shop ở chân trang: tên, giới thiệu, địa chỉ, SĐT, email, giờ mở cửa, Zalo/Facebook/TikTok/Instagram/YouTube (ô trống thì không hiện)", "Admin", true),
+          k("Trang chủ đầy đủ: vì sao chọn Florea, hoa được yêu thích, câu chuyện + 4 bước đặt hoa, bài viết mới, lời mời cuối trang (mục thiệp chỉ hiện khi shop có thiệp)", "Web", true),
+          k("Chuẩn bị deploy Render + Vercel: Dockerfile gốc repo, vercel.json, tệp env mẫu, nạp dữ liệu mẫu (admin, khách, hoa, tỉnh, thiệp) khi khởi động, gửi mail qua Resend HTTP API", "Hạ tầng", true),
           k("Giao diện responsive: quét 11 trang admin × 3 cỡ màn hình (320, 390, 768px) không tràn ngang; vùng chạm công tắc/nút trên cảm ứng ≥44px; web khách đã kiểm ở các mốc trước", "Web", true),
         ],
       },

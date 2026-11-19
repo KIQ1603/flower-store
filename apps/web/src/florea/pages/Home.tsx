@@ -6,11 +6,13 @@ import { RegionPicker } from "../RegionPicker";
 import { useRegion } from "../region";
 import { money } from "../api";
 import { EnvironmentOutlined } from "@ant-design/icons";
+import { HomeSections } from "../HomeSections";
 
 export function Home() {
   const nav = useNavigate();
   const { region, setRegion, openPicker } = useRegion();
   return (
+    <>
     <FloraTree>
       <div className="inline-flex items-center gap-2.5 rounded-full border border-white/25 bg-white/10 py-1.5 pr-4 pl-2 text-[#f9dfe6] backdrop-blur-md">
         <span className="grid h-6 w-6 place-items-center rounded-full bg-[#e58ca4]/30 text-[#ffd2df]"><BloomMark className="h-3.5 w-3.5" /></span>
@@ -45,5 +47,7 @@ export function Home() {
         )}
       </div>
     </FloraTree>
+    <HomeSections />
+    </>
   );
 }
