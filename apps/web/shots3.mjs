@@ -1,0 +1,25 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch();
+const desktop = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+await desktop.goto('http://localhost:4173', { waitUntil: 'networkidle' });
+await desktop.evaluate(async () => { await document.fonts.ready; });
+await desktop.evaluate(() => document.querySelector('#nguoi-giu-vuon .reveal.relative')?.scrollIntoView({ block: 'center' }));
+await desktop.waitForTimeout(1700);
+await desktop.screenshot({ path: 'qa/v3-about.png' });
+await desktop.evaluate(() => document.getElementById('bo-suu-tap')?.scrollIntoView());
+await desktop.waitForTimeout(1200);
+await desktop.screenshot({ path: 'qa/v3-collection.png' });
+const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
+await mobile.goto('http://localhost:4173', { waitUntil: 'networkidle' });
+await mobile.evaluate(async () => { await document.fonts.ready; });
+await mobile.evaluate(() => document.querySelector('#nguoi-giu-vuon .reveal.relative')?.scrollIntoView({ block: 'center' }));
+await mobile.waitForTimeout(1800);
+await mobile.screenshot({ path: 'qa/v3-mobile-about.png' });
+await mobile.evaluate(() => document.getElementById('bo-suu-tap')?.scrollIntoView());
+await mobile.waitForTimeout(1200);
+await mobile.screenshot({ path: 'qa/v3-mobile-collection.png' });
+// mobile menu
+await mobile.locator('button[aria-label="Mở menu"]').click();
+await mobile.waitForTimeout(700);
+await mobile.screenshot({ path: 'qa/v3-mobile-menu.png' });
+await browser.close();

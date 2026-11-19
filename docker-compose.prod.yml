@@ -1,0 +1,86 @@
+# Chạy thật: Caddy (HTTPS tự động) → web (nginx) → api (NestJS) → PostgreSQL. Ảnh lưu ở Cloudflare R2/S3 (cấu hình trong .env.production).
+# Khởi động:  docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-florea}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Cần đặt POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-florea}
+    volumes: [florea-db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-florea} -d ${POSTGRES_DB:-florea}"]
+      interval: 5s
+      retries: 20
+  api:
+    build: ./apps/api
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      TRUST_PROXY: "2"        # Caddy → nginx → api: lấy IP khách thật cho giới hạn tần suất
+      DATABASE_URL: postgresql://${POSTGRES_USER:-florea}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-florea}?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-30d}
+      CORS_ORIGINS: ${CORS_ORIGINS:?}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?}
+      ALERT_EMAIL: ${ALERT_EMAIL:?}
+      SMTP_HOST: ${SMTP_HOST:?}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-Florea <no-reply@florahub.vn>}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:?}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_BUCKET: ${S3_BUCKET:-florea}
+      S3_PRIVATE_BUCKET: ${S3_PRIVATE_BUCKET:?Cần bucket riêng tư cho ảnh xem trước}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?}
+      PUBLIC_STORAGE_URL: ${PUBLIC_STORAGE_URL:?}
+  web:
+    build:
+      context: ./apps/web
+      args:
+        VITE_API_URL: /api/v1
+        VITE_IMG_CDN: ${VITE_IMG_CDN:-}
+    restart: unless-stopped
+    depends_on: [api]
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [web]
+    ports: ["${HTTP_PORT:-80}:80", "${HTTPS_PORT:-443}:443"]
+    environment:
+      DOMAIN: ${DOMAIN:-:80}   # VD: florea.vn → Caddy tự xin chứng chỉ HTTPS
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-florea}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-florea}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_HOUR_UTC: ${BACKUP_HOUR_UTC:-20}   # 20:00 UTC = 03:00 giờ Việt Nam
+      BACKUP_EVERY_SEC: ${BACKUP_EVERY_SEC:-}
+    volumes:
+      - florea-backups:/backups
+      - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
+      - ./scripts/backup-loop.sh:/usr/local/bin/backup-loop.sh:ro
+    command: ["sh", "/usr/local/bin/backup-loop.sh"]
+volumes:
+  florea-db:
+  florea-backups:
+  caddy-data:

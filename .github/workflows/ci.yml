@@ -1,0 +1,70 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: florea, POSTGRES_PASSWORD: florea, POSTGRES_DB: florea }
+        ports: ["5441:5432"]
+        options: >-
+          --health-cmd "pg_isready -U florea" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://florea:florea@localhost:5441/florea?schema=public
+      JWT_ACCESS_SECRET: ci-access-secret-not-for-production
+      JWT_REFRESH_SECRET: ci-refresh-secret-not-for-production
+      ADMIN_EMAIL: admin@florahub.vn
+      ADMIN_PASSWORD: Admin@123456
+      S3_ENDPOINT: http://localhost:9100
+      S3_BUCKET: florea
+      S3_ACCESS_KEY: florea
+      S3_SECRET_KEY: florea-secret
+      PUBLIC_STORAGE_URL: http://localhost:9100/florea
+      NODE_ENV: test
+    defaults: { run: { working-directory: apps/api } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/api/package-lock.json }
+      - name: Kho ảnh MinIO (giả lập S3/R2)
+        run: docker run -d --name minio -p 9100:9000 -e MINIO_ROOT_USER=florea -e MINIO_ROOT_PASSWORD=florea-secret minio/minio server /data
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Kiểm tra kiểu
+        run: npx tsc --noEmit -p tsconfig.json
+      - name: ESLint
+        run: npm run lint
+      - name: Áp dụng migration (kiểm tra migration chạy được trên DB trống)
+        run: npx prisma migrate deploy
+      - run: npm run db:seed
+      - name: Test API (≈250 ca, chạy trên PostgreSQL + MinIO thật)
+        run: npm run test:e2e
+
+  web:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/web/package-lock.json }
+      - run: npm ci
+      - name: Kiểm tra kiểu
+        run: npx tsc --noEmit
+      - name: ESLint
+        run: npm run lint
+      - name: Build bản chạy thật
+        run: npx vite build
+        env: { VITE_API_URL: /api/v1 }
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dựng ảnh Docker API và web
+        run: |
+          docker build -t florea-api apps/api
+          docker build -t florea-web apps/web

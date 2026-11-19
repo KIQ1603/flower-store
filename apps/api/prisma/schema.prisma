@@ -1,0 +1,489 @@
+// Schema theo tài liệu 03 – 1 Admin (là shop) + nhiều Customer
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+enum ProductType {
+  FLOWER
+  CARE
+}
+enum CardStyle {
+  SOFT_PINK
+  GARDEN
+  WARM_SUN
+}
+enum PaymentMethod {
+  COD
+  VNPAY
+  MOMO
+}
+enum PaymentStatus {
+  UNPAID
+  PAID
+}
+enum OrderStatus {
+  PENDING_PAYMENT
+  PLACED
+  ACCEPTED
+  PREPARING
+  AWAITING_APPROVAL
+  REVISION_REQUESTED
+  APPROVED
+  DELIVERING
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+enum Actor {
+  ADMIN
+  CUSTOMER
+  SYSTEM
+}
+enum PreviewStatus {
+  PENDING
+  APPROVED
+  REVISION_REQUESTED
+  AUTO_APPROVED
+}
+enum ImageOwner {
+  ADMIN
+  CUSTOMER
+}
+enum TokenPurpose {
+  PREVIEW
+  TRACKING
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  phone         String?
+  passwordHash  String
+  googleId      String?  @unique
+  fullName      String
+  role          Role     @default(CUSTOMER)
+  gardenPoints  Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  addresses     Address[]
+  orders        Order[]
+  wishlist      Wishlist[]
+  reviews       Review[]
+  gardenLogs    GardenLog[]
+  pointTx       PointTransaction[]
+  notifications Notification[]
+  cartItems     CartItem[]
+  coupons       Coupon[]
+}
+
+model Province {
+  id    Int    @id @default(autoincrement())
+  code  Int?   @unique // mã hành chính thực tế (provinces.open-api.vn)
+  name  String @unique
+  wards Ward[]
+  products Product[]
+  ratesFrom InterProvinceRate[] @relation("RateFrom")
+  ratesTo   InterProvinceRate[] @relation("RateTo")
+}
+
+/// Phí giao liên tỉnh do admin cấu hình theo từng cặp (tỉnh của cửa hàng → tỉnh nhận hoa)
+model InterProvinceRate {
+  id             Int      @id @default(autoincrement())
+  fromProvinceId Int
+  fromProvince   Province @relation("RateFrom", fields: [fromProvinceId], references: [id])
+  toProvinceId   Int
+  toProvince     Province @relation("RateTo", fields: [toProvinceId], references: [id])
+  fee            Int
+  etaDays        Int      @default(2)
+  isActive       Boolean  @default(true)
+
+  @@unique([fromProvinceId, toProvinceId])
+}
+
+model Ward {
+  id            Int      @id @default(autoincrement())
+  code          Int?     @unique // mã hành chính thực tế
+  provinceId    Int
+  province      Province @relation(fields: [provinceId], references: [id])
+  name          String
+  isDeliverable Boolean  @default(true)
+  deliveryFee   Int      @default(30000)
+  orders        Order[]
+  addresses     Address[]
+  products      Product[]
+
+  @@unique([provinceId, name])
+}
+
+model Address {
+  id       String  @id @default(uuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wardId   Int
+  ward     Ward    @relation(fields: [wardId], references: [id])
+  detail   String
+  phone    String
+  isDefault Boolean @default(false)
+}
+
+model CareCategory {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  icon     String?
+  sort     Int       @default(0)
+  isActive Boolean   @default(true)
+  products Product[]
+}
+
+/// Loại danh mục do quản trị cấu hình (loại hoa, dịp tặng, người nhận) để sản phẩm chọn từ danh sách và khách lọc/tìm hoa
+enum TaxonKind {
+  FLOWER_TYPE
+  OCCASION
+  RECIPIENT
+}
+
+model Taxon {
+  id       Int       @id @default(autoincrement())
+  kind     TaxonKind
+  name     String
+  icon     String?
+  sort     Int       @default(0)
+  isActive Boolean   @default(true)
+
+  @@unique([kind, name])
+}
+
+model Product {
+  id           String      @id @default(uuid())
+  type         ProductType
+  name         String
+  subtitle     String?
+  story        String?
+  category     String
+  careCategoryId Int?
+  careCategory CareCategory? @relation(fields: [careCategoryId], references: [id])
+  /// Địa điểm của sản phẩm: bắt buộc có tỉnh/thành; chọn thêm phường thì chỉ giao tới đúng phường đó
+  provinceId   Int
+  province     Province    @relation(fields: [provinceId], references: [id])
+  wardId       Int?
+  ward         Ward?       @relation(fields: [wardId], references: [id])
+  /// Cho giao sang tỉnh khác (tính phí liên tỉnh). Tắt với hoa dễ dập.
+  allowIntercity Boolean   @default(true)
+  occasionTags  String[]
+  recipientTags String[]
+  flowers      String[]
+  stemCount    String?
+  scent        String?
+  longevity    String?
+  price        Int
+  badge        String?
+  stock        Int?
+  avgRating    Decimal     @default(0) @db.Decimal(3, 2)
+  ratingCount  Int         @default(0)
+  isActive     Boolean     @default(true)
+  searchText   String      @default("")
+  createdAt    DateTime    @default(now())
+
+  images     ProductImage[]
+  orderItems OrderItem[]
+  wishlist   Wishlist[]
+  cartItems  CartItem[]
+
+  @@index([type, isActive])
+  @@index([provinceId, wardId])
+}
+
+model ProductImage {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  sort      Int     @default(0)
+}
+
+model Wishlist {
+  userId    String
+  productId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, productId])
+}
+
+model CartItem {
+  userId    String
+  productId String
+  quantity  Int     @default(1)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+}
+
+model Coupon {
+  id         String    @id @default(uuid())
+  code       String    @unique
+  percent    Int
+  minOrder   Int       @default(0)
+  expiresAt  DateTime?
+  usageLimit Int?
+  usedCount  Int       @default(0)
+  isActive   Boolean   @default(true)
+  ownerId    String?   // mã cá nhân (đổi từ Vườn điểm thưởng): chỉ chủ tài khoản này dùng được
+  owner      User?     @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+  orders     Order[]
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  code          String        @unique
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id])
+  guestToken    String?
+  buyerEmail    String?
+  buyerName     String?
+  buyerPhone    String?
+  status        OrderStatus   @default(PLACED)
+  skipPreview   Boolean       @default(false)
+  recipientName String
+  recipientPhone String
+  wardId        Int
+  ward          Ward          @relation(fields: [wardId], references: [id])
+  address       String
+  deliverAt     DateTime?
+  note          String?
+  subtotal      Int
+  discount      Int           @default(0)
+  shipFee       Int           @default(0)
+  shipBreakdown Json? // chi tiết phí giao: nội tỉnh / liên tỉnh theo từng tỉnh gửi
+  cardFee       Int           @default(0) // tiền thiệp (theo mẫu khách chọn lúc đặt)
+  total         Int
+  couponId      String?
+  coupon        Coupon?       @relation(fields: [couponId], references: [id])
+  paymentMethod PaymentMethod @default(COD)
+  paymentStatus PaymentStatus @default(UNPAID)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deliveredAt   DateTime?
+  reviewInvitedAt DateTime? // đã gửi lời mời đánh giá chưa
+
+  items    OrderItem[]
+  card     OrderCard?
+  history  OrderStatusHistory[]
+  previews OrderPreview[]
+  review   Review?
+  tokens   OrderAccessToken[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, updatedAt])
+}
+
+model OrderItem {
+  id           String  @id @default(uuid())
+  orderId      String
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product @relation(fields: [productId], references: [id])
+  nameSnapshot String
+  unitPrice    Int
+  quantity     Int
+}
+
+model OrderCard {
+  orderId  String    @id
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  toName   String
+  message  String    @db.VarChar(150)
+  fromName String
+  style    CardStyle @default(SOFT_PINK) // đã bỏ: giờ chọn theo mẫu thiệp do shop cấu hình
+  cardTypeId Int?
+  cardType   CardType? @relation(fields: [cardTypeId], references: [id], onDelete: SetNull)
+  cardName   String    @default("")
+  cardPrice  Int       @default(0)
+}
+
+/// Mẫu thiệp do shop cấu hình (tên, giá, ảnh). Chưa có mẫu nào đang bán thì web không hiện mục thiệp.
+model CardType {
+  id       Int         @id @default(autoincrement())
+  name     String      @unique
+  price    Int
+  imageUrl String?
+  isActive Boolean     @default(true)
+  sort     Int         @default(0)
+  cards    OrderCard[]
+}
+
+model OrderStatusHistory {
+  id         BigInt      @id @default(autoincrement())
+  orderId    String
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  actor      Actor
+  reason     String?
+  createdAt  DateTime    @default(now())
+
+  @@index([orderId])
+}
+
+// ★ Tính năng 1 – xem & xác nhận hoa
+model OrderPreview {
+  id           String        @id @default(uuid())
+  orderId      String
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  roundNo      Int
+  adminNote    String?
+  submittedAt  DateTime      @default(now())
+  expiresAt    DateTime
+  status       PreviewStatus @default(PENDING)
+  customerNote String?
+  decidedAt    DateTime?
+  remindedAt   DateTime?
+  images       PreviewImage[]
+
+  @@unique([orderId, roundNo])
+  @@index([status, expiresAt])
+}
+
+model PreviewImage {
+  id         String       @id @default(uuid())
+  previewId  String
+  preview    OrderPreview @relation(fields: [previewId], references: [id], onDelete: Cascade)
+  owner      ImageOwner
+  storageKey String
+  width      Int?
+  height     Int?
+  bytes      Int?
+  takenAt    DateTime     @default(now())
+}
+
+model OrderAccessToken {
+  tokenHash String       @id
+  orderId   String
+  order     Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  purpose   TokenPurpose
+  expiresAt DateTime
+  usedAt    DateTime?
+}
+
+// ★ Tính năng 2 – đánh giá
+model Review {
+  id             String   @id @default(uuid())
+  orderId        String   @unique
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  productRating  Int
+  serviceRating  Int
+  comment        String?
+  isVisible      Boolean  @default(true)
+  needsAttention Boolean  @default(false)
+  adminReply     String?
+  repliedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  images         ReviewImage[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([isVisible])
+  @@index([needsAttention])
+}
+
+model ReviewImage {
+  id         String @id @default(uuid())
+  reviewId   String
+  review     Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  storageKey String
+  sort       Int    @default(0)
+}
+
+model GardenLog {
+  id     String   @id @default(uuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+  points Int      @default(5)
+
+  @@unique([userId, date])
+}
+
+model PointTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta     Int
+  reason    String
+  createdAt DateTime @default(now())
+}
+
+model Post {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  topic       String
+  summary     String
+  content     String
+  coverUrl    String?
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt @default(now())
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+// Đăng ký bằng email: lưu tạm thông tin + mã OTP (băm) cho tới khi xác thực
+model EmailOtp {
+  email        String   @id
+  codeHash     String
+  passwordHash String
+  fullName     String
+  phone        String?
+  attempts     Int      @default(0)
+  expiresAt    DateTime
+  lastSentAt   DateTime
+}
+
+// Hàng đợi email (lưu DB): gửi nền, lỗi thì tự thử lại với thời gian chờ tăng dần
+model EmailJob {
+  id            String   @id @default(uuid())
+  to            String
+  subject       String
+  html          String
+  text          String
+  status        String   @default("PENDING") // PENDING | SENT | FAILED
+  attempts      Int      @default(0)
+  nextAttemptAt DateTime @default(now())
+  lastError     String?
+  createdAt     DateTime @default(now())
+  sentAt        DateTime?
+
+  @@index([status, nextAttemptAt])
+}
+
+/// Cấu hình đơn giản dạng khoá → giá trị JSON do admin chỉnh (VD: luật Vườn điểm thưởng)
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
