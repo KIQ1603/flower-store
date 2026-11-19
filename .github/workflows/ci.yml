@@ -41,6 +41,8 @@ jobs:
       - name: Áp dụng migration (kiểm tra migration chạy được trên DB trống)
         run: npx prisma migrate deploy
       - run: npm run db:seed
+        env:
+          SEED_DEMO: 'off' # test chạy trên DB không có khách/thiệp mẫu
       - name: Test API (≈250 ca, chạy trên PostgreSQL + MinIO thật)
         run: npm run test:e2e
 

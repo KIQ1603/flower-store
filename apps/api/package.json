@@ -5,6 +5,7 @@
   "scripts": {
     "build": "nest build",
     "start": "node dist/main.js",
+    "start:render": "prisma migrate deploy && ts-node prisma/seed.ts && node dist/main.js",
     "start:dev": "nest start --watch",
     "test": "jest --runInBand",
     "test:e2e": "jest --runInBand --config ./test/jest-e2e.json",

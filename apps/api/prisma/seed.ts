@@ -6,6 +6,18 @@ import * as bcrypt from 'bcryptjs';
 import { normalize } from '../src/common/text';
 
 const prisma = new PrismaClient();
+const PROD = process.env.NODE_ENV === 'production';
+// Chạy thật (Render): seed chạy lại mỗi lần deploy nên KHÔNG ghi đè sản phẩm admin đã sửa; muốn đưa về mẫu ban đầu thì đặt SEED_RESET=1
+// SEED_DEMO=off: bỏ khách mẫu và thiệp mẫu (CI dùng để test chạy trên DB sạch)
+const DEMO = process.env.SEED_DEMO !== 'off';
+const REFRESH = process.env.SEED_RESET === '1' || !PROD;
+
+// Thiệp mẫu để khách chọn thử (admin sửa/xoá trong tab Thiệp)
+const cardSamples = [
+  { name: 'Thiệp hoa mẫu đơn', price: 5000, imageUrl: '/images/p-peony.svg' },
+  { name: 'Thiệp hồng pastel', price: 8000, imageUrl: '/images/p-rose.svg' },
+  { name: 'Thiệp trắng tinh khôi', price: 12000, imageUrl: '/images/p-white.svg' },
+];
 
 const provinces: Record<string, string[]> = {
   'Hà Nội': ['Ba Đình', 'Hoàn Kiếm', 'Đống Đa', 'Cầu Giấy', 'Tây Hồ', 'Hai Bà Trưng'],
@@ -104,16 +116,18 @@ async function main() {
   for (const { photo, ...f } of flowers) {
     const data = { ...f, type: 'FLOWER' as const, story: f.subtitle, searchText: normalize([f.name, f.subtitle, f.category, ...f.flowers].join(' ')) };
     const exist = await prisma.product.findFirst({ where: { name: f.name, type: 'FLOWER' } });
+    if (exist && !REFRESH) continue;
     const p = exist ? await prisma.product.update({ where: { id: exist.id }, data }) : await prisma.product.create({ data: { ...data, provinceId: hn.id } });
     await prisma.productImage.deleteMany({ where: { productId: p.id } });
     const urls = [...(photo ? [U(photo)] : []), SVG[f.category]];
     await prisma.productImage.createMany({ data: urls.map((url, sort) => ({ productId: p.id, url, sort })) });
   }
-  for (const p of posts) await prisma.post.upsert({ where: { slug: p.slug }, update: { title: p.title, topic: p.topic, summary: p.summary, content: p.content }, create: p });
+  for (const p of posts) await prisma.post.upsert({ where: { slug: p.slug }, update: REFRESH ? { title: p.title, topic: p.topic, summary: p.summary, content: p.content } : {}, create: p });
   for (const c of careProducts) {
     const cat = await prisma.careCategory.findUniqueOrThrow({ where: { name: c.group } });
     const data = { type: 'CARE' as const, name: c.name, subtitle: c.subtitle, story: c.story, category: c.group, careCategoryId: cat.id, price: c.price, badge: c.badge ?? null, occasionTags: [], recipientTags: [], flowers: [], searchText: normalize([c.name, c.subtitle, c.group].join(' ')) };
     const exist = await prisma.product.findFirst({ where: { name: c.name, type: 'CARE' } });
+    if (exist && !REFRESH) continue;
     const p = exist ? await prisma.product.update({ where: { id: exist.id }, data }) : await prisma.product.create({ data: { ...data, provinceId: hn.id } });
     await prisma.productImage.deleteMany({ where: { productId: p.id } });
     await prisma.productImage.create({ data: { productId: p.id, url: `/images/p-care-${c.svg}.svg`, sort: 0 } });
@@ -124,12 +138,26 @@ async function main() {
     await prisma.$executeRawUnsafe(stmt.replace(/^(--.*\n)+/g, ''));
   await prisma.coupon.upsert({ where: { code: 'FLORAx5' }, update: {}, create: { code: 'FLORAx5', percent: 5 } });
 
+  const adminPw = process.env.ADMIN_PASSWORD ?? (PROD ? '' : 'Admin@123456');
+  if (!adminPw) throw new Error('Thiếu ADMIN_PASSWORD (bắt buộc khi chạy thật)');
   const email = (process.env.ADMIN_EMAIL ?? 'admin@florahub.vn').toLowerCase();
-  const password = process.env.ADMIN_PASSWORD ?? 'Admin@123456';
   await prisma.user.upsert({
     where: { email }, update: {},
-    create: { email, fullName: 'Quản trị Florea', role: 'ADMIN', passwordHash: await bcrypt.hash(password, 10) },
+    create: { email, fullName: 'Quản trị Florea', role: 'ADMIN', passwordHash: await bcrypt.hash(adminPw, 10) },
   });
+
+  // Một tài khoản khách mẫu để thử ngay sau khi deploy. Chạy thật phải tự đặt mật khẩu qua DEMO_USER_PASSWORD (không dùng mật khẩu mặc định công khai)
+  const demoEmail = (process.env.DEMO_USER_EMAIL ?? 'khach@florahub.vn').toLowerCase();
+  const demoPw = process.env.DEMO_USER_PASSWORD ?? (PROD ? '' : 'Khach@123456');
+  if (demoPw && DEMO) {
+    await prisma.user.upsert({
+      where: { email: demoEmail }, update: {},
+      create: { email: demoEmail, fullName: 'Khách Thử Nghiệm', role: 'CUSTOMER', passwordHash: await bcrypt.hash(demoPw, 10), phone: '0900000000' },
+    });
+    console.log('Khách mẫu:', demoEmail);
+  } else console.log('Bỏ qua tạo khách mẫu (chưa đặt DEMO_USER_PASSWORD hoặc SEED_DEMO=off)');
+
+  if (DEMO && (await prisma.cardType.count()) === 0) await prisma.cardType.createMany({ data: cardSamples.map((c, sort) => ({ ...c, sort })) });
   console.log('Seed xong. Admin:', email);
 }
 
