@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/dist-tracker
+**/.env
+**/.env.*
+.git
+apps/web
+docs
+*.docx
+tien-do.html
