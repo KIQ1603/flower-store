@@ -4,6 +4,7 @@ import { Transform, Type } from 'class-transformer';
 import { IsEnum, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { Prisma } from '@prisma/client';
 import { CurrentUser, JwtAuthGuard, type JwtUser, CustomerOnlyGuard } from '../common/roles';
+import { searchProducts, wordsOf } from './search';
 import { normalize } from '../common/text';
 import { PrismaService } from '../prisma/prisma.service';
 import { ShippingService, type Delivery, type Rate } from '../orders/shipping.service';
@@ -70,7 +71,6 @@ export class ProductsController {
     if (q.occasion) where.occasionTags = { has: q.occasion };
     if (q.recipient) where.recipientTags = { has: q.recipient };
     if (q.category) where.category = q.category;
-    if (q.q) where.searchText = { contains: normalize(q.q) };
 
     const orderBy: Prisma.ProductOrderByWithRelationInput[] =
       q.sort === 'price_asc' ? [{ price: 'asc' }] :
@@ -80,6 +80,16 @@ export class ProductsController {
 
     const deliverProvinces = await this.deliverProvinces();
     if (!deliverable) return { data: [], meta: { page, limit, total: 0, totalPages: 0, deliverable, deliverProvinces } };
+    // Có từ khoá: lọc theo bộ lọc trước, rồi tìm + chấm điểm độ phù hợp (xem search.ts), phân trang trên kết quả đã xếp hạng
+    if (q.q && wordsOf(q.q).length) {
+      const docs = await this.prisma.product.findMany({ where, select: { id: true, name: true, subtitle: true, category: true, flowers: true, occasionTags: true, recipientTags: true, badge: true, price: true, avgRating: true, ratingCount: true, createdAt: true } });
+      const r = searchProducts(docs.map(d => ({ ...d, avgRating: Number(d.avgRating) })), q.q, q.sort);
+      const slice = r.ids.slice((page - 1) * limit, page * limit);
+      const got = await this.prisma.product.findMany({ where: { id: { in: slice } }, include: { images: { orderBy: { sort: 'asc' } }, ...PLACE } });
+      const byId = new Map(got.map(x => [x.id, x]));
+      const rows = slice.map(id => byId.get(id)!).filter(Boolean);
+      return { data: rows.map(x => productCard(x, ward ? this.ship.deliveryOf(x, ward, rates) : undefined)), meta: { page, limit, total: r.ids.length, totalPages: Math.ceil(r.ids.length / limit), deliverable, deliverProvinces, search: { mode: r.mode, tokens: r.tokens } } };
+    }
     const [total, rows] = await Promise.all([
       this.prisma.product.count({ where }),
       this.prisma.product.findMany({ where, orderBy, skip: (page - 1) * limit, take: limit, include: { images: { orderBy: { sort: 'asc' } }, ...PLACE } }),

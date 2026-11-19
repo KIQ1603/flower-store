@@ -9,7 +9,7 @@ import { CloseOutlined, DownOutlined, EnvironmentOutlined } from "@ant-design/ic
 import { cn } from "../../utils/cn";
 
 type Filters = { occasions: string[]; recipients: string[]; categories: string[]; icons?: { occasions: Record<string, string>; recipients: Record<string, string>; categories: Record<string, string> } };
-type Result = { data: ProductCardData[]; meta: { page: number; limit: number; total: number; totalPages: number; deliverable: boolean; deliverProvinces: string[] } };
+type Result = { data: ProductCardData[]; meta: { page: number; limit: number; total: number; totalPages: number; deliverable: boolean; deliverProvinces: string[]; search?: { mode: "exact" | "any" | "fuzzy"; tokens: string[] } } };
 
 const SORTS = [
   { v: "newest", label: "Mới nhất" },
@@ -107,7 +107,7 @@ export function Flowers() {
         <aside aria-label="Bộ lọc" className="lg:sticky lg:top-28 lg:self-start">
           <div className="rounded-[28px] border border-line bg-white p-4 shadow-[0_20px_50px_-36px_rgba(120,70,80,0.4)] sm:p-5">
             <div className="relative">
-              <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="Tìm hoa… (VD: hồng, tulip)" aria-label="Tìm kiếm hoa" type="search" enterKeyHint="search"
+              <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="Tìm hoa… (VD: hoa tặng bạn, hồng, tulip)" aria-label="Tìm kiếm hoa" type="search" enterKeyHint="search"
                 className="w-full rounded-full border border-line bg-cream py-3.5 pr-12 pl-5 text-[16px] font-medium outline-none placeholder:text-ink-faint focus:border-rose focus:ring-4 focus:ring-rose-soft" />
               {qInput && <button onClick={() => { setQInput(""); set({ q: "" }); }} aria-label="Xoá từ khoá" className="absolute top-1/2 right-2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full text-ink-faint hover:bg-cream-2"><CloseOutlined aria-hidden /></button>}
             </div>
@@ -124,6 +124,9 @@ export function Flowers() {
           <div className="mb-4 flex min-h-8 items-center justify-between text-[15px] font-semibold text-ink-soft" role="status" aria-live="polite">
             <span>{res && !loading ? `${res.meta.total} mẫu hoa` : "Đang tải…"}</span>
           </div>
+          {res && !loading && get("q") && res.data.length > 0 && res.meta.search && res.meta.search.mode !== "exact" && (
+            <p role="note" className="mb-4 rounded-2xl bg-cream-2 px-4 py-3 text-[14.5px] font-semibold text-ink-soft">{res.meta.search.mode === "any" ? <>Không có mẫu khớp đủ mọi từ trong “{get("q")}”. Đây là các mẫu khớp một phần, xếp theo độ phù hợp.</> : <>Không có kết quả đúng chính tả cho “{get("q")}”. Đây là các mẫu gần giống nhất.</>}</p>
+          )}
 
           {error ? (
             <div role="alert" className="rounded-3xl border border-rose/40 bg-rose-mist p-8 text-center">
@@ -140,7 +143,7 @@ export function Flowers() {
           ) : res && res.data.length === 0 ? (
             <div className="rounded-3xl border border-line bg-white p-10 text-center">
               <p className="text-[18px] font-bold">Không tìm thấy mẫu hoa phù hợp </p>
-              <p className="mt-1 text-ink-soft">Thử bỏ bớt bộ lọc hoặc đổi từ khoá nhé.</p>
+              <p className="mt-1 text-ink-soft">{get("q") ? <>Không có mẫu nào khớp “{get("q")}”. Thử từ ngắn hơn như tên loại hoa, dịp hoặc người nhận (VD: hồng, sinh nhật, mẹ).</> : "Thử bỏ bớt bộ lọc nhé."}</p>
               <button onClick={reset} className="btn mt-4 bg-[#d96b87] text-white"><span>Xoá bộ lọc</span></button>
             </div>
           ) : (

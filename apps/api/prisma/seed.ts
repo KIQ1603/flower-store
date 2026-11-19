@@ -14,6 +14,13 @@ const DEMO = process.env.SEED_DEMO !== 'off';
 const RESET_PW = process.env.SEED_RESET_PASSWORDS === '1';
 const REFRESH = process.env.SEED_RESET === '1' || !PROD;
 
+// Dịp lễ gắn cho hoa mẫu để lọc/tìm theo "8/3", "20/10", "Valentine"… ra kết quả (các dịp này đã có sẵn trong danh mục)
+const holiday: Record<string, string[]> = {
+  'Juliet': ['Valentine'], 'Hồng Nhung': ['Valentine'], 'Tulip Hồng': ['8/3', '20/10', 'Valentine'], 'Mây Trắng': ['8/3', 'Ngày của Mẹ'],
+  'Mộng Mơ': ['20/10'], 'Nắng Mai': ['Tốt nghiệp', 'Chúc mừng'], 'Hạ Sang': ['Chúc mừng'], 'Sớm Mai': ['Khai trương'],
+};
+const withHoliday = (name: string, tags: string[]) => [...new Set([...tags, ...(holiday[name] ?? [])])];
+
 // Thiệp mẫu để khách chọn thử (admin sửa/xoá trong tab Thiệp)
 const cardSamples = [
   { name: 'Thiệp hoa mẫu đơn', price: 5000, imageUrl: '/images/p-peony.svg' },
@@ -116,13 +123,21 @@ async function main() {
   const hn = await prisma.province.findUniqueOrThrow({ where: { name: 'Hà Nội' } }); // sản phẩm mẫu thuộc Hà Nội; sửa lại trong admin nếu cần
   for (const [i, name] of care.entries()) await prisma.careCategory.upsert({ where: { name }, update: {}, create: { name, sort: i } });
   for (const { photo, ...f } of flowers) {
-    const data = { ...f, type: 'FLOWER' as const, story: f.subtitle, searchText: normalize([f.name, f.subtitle, f.category, ...f.flowers].join(' ')) };
+    const data = { ...f, occasionTags: withHoliday(f.name, f.occasionTags), type: 'FLOWER' as const, story: f.subtitle, searchText: normalize([f.name, f.subtitle, f.category, ...f.flowers].join(' ')) };
     const exist = await prisma.product.findFirst({ where: { name: f.name, type: 'FLOWER' } });
     if (exist && !REFRESH) continue;
     const p = exist ? await prisma.product.update({ where: { id: exist.id }, data }) : await prisma.product.create({ data: { ...data, provinceId: hn.id } });
     await prisma.productImage.deleteMany({ where: { productId: p.id } });
     const urls = [...(photo ? [U(photo)] : []), SVG[f.category]];
     await prisma.productImage.createMany({ data: urls.map((url, sort) => ({ productId: p.id, url, sort })) });
+  }
+  // Chạy thật: sản phẩm đã có không bị ghi đè, nên gắn thêm dịp lễ đúng MỘT lần (đánh dấu trong Setting) để không đè lên chỉnh sửa sau này của admin
+  if (!(await prisma.setting.findUnique({ where: { key: 'seed:holiday-tags-v1' } }))) {
+    for (const [name, tags] of Object.entries(holiday)) {
+      const p = await prisma.product.findFirst({ where: { name, type: 'FLOWER' } });
+      if (p) await prisma.product.update({ where: { id: p.id }, data: { occasionTags: [...new Set([...p.occasionTags, ...tags])] } });
+    }
+    await prisma.setting.create({ data: { key: 'seed:holiday-tags-v1', value: true } });
   }
   for (const p of posts) await prisma.post.upsert({ where: { slug: p.slug }, update: REFRESH ? { title: p.title, topic: p.topic, summary: p.summary, content: p.content } : {}, create: p });
   for (const c of careProducts) {
