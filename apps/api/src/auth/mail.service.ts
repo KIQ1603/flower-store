@@ -11,9 +11,22 @@ export class MailService {
     auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
   });
 
+  /** Có RESEND_API_KEY thì gửi qua HTTP API của Resend (cổng 443, chạy được cả trên máy chủ chặn cổng SMTP như gói Free của Render); không thì dùng SMTP */
+  private async viaResend(from: string, to: string, subject: string, html: string, text: string) {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: [to], subject, html, text }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!r.ok) throw new Error(`Resend ${r.status}: ${(await r.text().catch(() => '')).slice(0, 200)}`);
+  }
+
   async send(to: string, subject: string, html: string, text: string) {
+    const from = process.env.MAIL_FROM ?? 'Florea <no-reply@florahub.vn>';
     try {
-      await this.transport.sendMail({ from: process.env.MAIL_FROM ?? 'Florea <no-reply@florahub.vn>', to, subject, html, text });
+      if (process.env.RESEND_API_KEY) await this.viaResend(from, to, subject, html, text);
+      else await this.transport.sendMail({ from, to, subject, html, text });
     } catch (e) {
       this.log.error(`Gửi mail tới ${to} thất bại: ${(e as Error).message}`);
       throw new ServiceUnavailableException({ code: 'MAIL_FAILED', message: 'Không gửi được email xác thực. Vui lòng thử lại sau.' });
