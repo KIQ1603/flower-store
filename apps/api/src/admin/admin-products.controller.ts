@@ -34,7 +34,7 @@ export class ProductBodyDto {
   @IsOptional() @Transform(trim) @IsString() @MaxLength(60) longevity?: string;
   @IsBoolean() isActive: boolean;
   /** Danh sách URL ảnh; ảnh đầu tiên là ảnh bìa */
-  @IsArray() @ArrayMaxSize(8, { message: 'Tối đa 8 ảnh' }) @IsString({ each: true }) @Matches(IMG_URL, { each: true, message: 'Đường dẫn ảnh không hợp lệ' }) images: string[];
+  @IsArray() @ArrayMaxSize(12, { message: 'Tối đa 12 ảnh' }) @IsString({ each: true }) @Matches(IMG_URL, { each: true, message: 'Đường dẫn ảnh không hợp lệ' }) images: string[];
 }
 
 export class UpdateProductDto {
@@ -56,7 +56,7 @@ export class UpdateProductDto {
   @IsOptional() @Transform(trim) @IsString() @MaxLength(100) scent?: string;
   @IsOptional() @Transform(trim) @IsString() @MaxLength(60) longevity?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
-  @IsOptional() @IsArray() @ArrayMaxSize(8, { message: 'Tối đa 8 ảnh' }) @IsString({ each: true }) @Matches(IMG_URL, { each: true, message: 'Đường dẫn ảnh không hợp lệ' }) images?: string[];
+  @IsOptional() @IsArray() @ArrayMaxSize(12, { message: 'Tối đa 12 ảnh' }) @IsString({ each: true }) @Matches(IMG_URL, { each: true, message: 'Đường dẫn ảnh không hợp lệ' }) images?: string[];
 }
 
 export class AdminListQuery {

@@ -15,7 +15,7 @@ class PresignDto {
   /** product: ảnh sản phẩm (admin) · preview: ảnh bó hoa gửi khách (admin) · review: ảnh thật khi đánh giá (khách). Yêu cầu chỉnh sửa hoa chỉ nhập chữ, không kèm ảnh. */
   @IsIn(['product', 'preview', 'review'], { message: 'Mục đích tải ảnh không hợp lệ' }) purpose: 'product' | 'preview' | 'review';
   @IsOptional() @IsString() @MaxLength(40) orderCode?: string;
-  @ValidateNested({ each: true }) @Type(() => FileDto) @ArrayMinSize(1) @ArrayMaxSize(8) files: FileDto[];
+  @ValidateNested({ each: true }) @Type(() => FileDto) @ArrayMinSize(1) @ArrayMaxSize(12) files: FileDto[];
 }
 
 @ApiTags('Tải ảnh')

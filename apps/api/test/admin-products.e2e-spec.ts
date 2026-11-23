@@ -48,14 +48,14 @@ describe('M2.4 · Quản lý sản phẩm (Admin) + tải ảnh', () => {
     await http().get(`/api/v1/products/${r.body.id}`).expect(200);
   });
 
-  it('validation: thiếu tên, giá sai, ảnh sai, tồn kho âm, quá 8 ảnh → 400 kèm thông báo tiếng Việt', async () => {
+  it('validation: thiếu tên, giá sai, ảnh sai, tồn kho âm, quá 12 ảnh → 400 kèm thông báo tiếng Việt', async () => {
     const bad = async (o: any, text: string) => { const r = await http().post('/api/v1/admin/products').set(A()).send(body(o)); expect(r.status).toBe(400); expect(JSON.stringify(r.body.message)).toContain(text); };
     await bad({ name: '   ' }, 'tên sản phẩm');
     await bad({ price: 500 }, 'Giá tối thiểu');
     await bad({ price: 12.5 }, 'số nguyên');
     await bad({ stock: -1 }, 'không âm');
     await bad({ images: ['javascript:alert(1)'] }, 'không hợp lệ');
-    await bad({ images: Array(9).fill('/images/p-rose.svg') }, 'Tối đa 8 ảnh');
+    await bad({ images: Array(13).fill('/images/p-rose.svg') }, 'Tối đa 12 ảnh');
     await bad({ category: '' }, 'loại hoa');
   });
 
@@ -155,12 +155,12 @@ describe('M2.4 · Quản lý sản phẩm (Admin) + tải ảnh', () => {
       expect(put.status).toBeGreaterThanOrEqual(400);
     });
 
-    it('từ chối: loại file lạ, file >3MB, rỗng, quá 8 file, sai mục đích', async () => {
+    it('từ chối: loại file lạ, file >3MB, rỗng, quá 12 file, sai mục đích', async () => {
       expect((await presign([{ type: 'application/pdf', size: 100 }])).status).toBe(400);
       expect((await presign([{ type: 'image/png', size: 4 * 1024 * 1024 }])).status).toBe(400);
       expect((await presign([{ type: 'image/png', size: 0 }])).status).toBe(400);
       expect((await presign([])).status).toBe(400);
-      expect((await presign(Array(9).fill({ type: 'image/png', size: 100 }))).status).toBe(400);
+      expect((await presign(Array(13).fill({ type: 'image/png', size: 100 }))).status).toBe(400);
       await http().post('/api/v1/uploads/presign').set(A()).send({ purpose: 'review', files: [{ type: 'image/png', size: 100 }] }).expect(400);
     });
 

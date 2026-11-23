@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, ApiError, money } from "../api";
-import { ProductCard, ProductImage, type ProductCardData } from "../ProductCard";
+import { ProductCard, type ProductCardData } from "../ProductCard";
 import { useRegion } from "../region";
 import { useCart } from "../cart";
 import { useWishlist } from "../wishlist";
 import { Lightbox } from "../previewKit";
-import { cn } from "../../utils/cn";
+import { ProductGallery } from "../ProductGallery";
 import { resized } from "../imgSrc";
 import { useAuth } from "../auth";
 import { useCardTypes } from "../cardTypes";
@@ -49,13 +49,12 @@ export function ProductDetail() {
   const { user } = useAuth();
   const [p, setP] = useState<Detail | null>(null);
   const [error, setError] = useState<{ status: number; msg: string } | null>(null);
-  const [img, setImg] = useState(0);
   const [rv, setRv] = useState<Reviews | null>(null);
   const [moreBusy, setMoreBusy] = useState(false);
   const [lb, setLb] = useState<{ imgs: string[]; i: number } | null>(null);
 
   const load = useCallback(() => {
-    setP(null); setError(null); setImg(0); setRv(null);
+    setP(null); setError(null); setRv(null);
     api<Detail>(`/products/${id}${region ? `?wardId=${region.wardId}` : ""}`).then(setP).catch((e: ApiError) => setError({ status: e.status, msg: e.message }));
     api<Reviews>(`/products/${id}/reviews`).then(setRv).catch(() => {});
   }, [id, region?.wardId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -109,7 +108,6 @@ export function ProductDetail() {
   const specs = [
     { k: "Số cành", v: p.stemCount }, { k: "Hương thơm", v: p.scent }, { k: "Độ tươi", v: p.longevity },
   ].filter((s) => s.v);
-  const ordered = [p.images[img], ...p.images.filter((_, i) => i !== img)].filter(Boolean);
 
   return (
     <main className="mx-auto w-full max-w-[1280px] px-4 pt-28 pb-36 sm:px-6 lg:pt-32 lg:pb-24">
@@ -117,26 +115,11 @@ export function ProductDetail() {
         <Link to={back} className="hover:text-rose-deep">‹ {care ? "Chăm sóc hoa" : "Hoa tươi"}</Link> <span className="mx-1 text-ink-faint">/</span> <span className="text-ink">{p.name}</span>
       </nav>
 
-      <div className="grid gap-7 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
-        {/* Thư viện ảnh */}
-        <div className="lg:sticky lg:top-28 lg:self-start">
-          <div className="relative overflow-hidden rounded-[32px] bg-white p-3 shadow-[0_30px_70px_-40px_rgba(120,70,80,0.55)] ring-1 ring-line/60">
-            <div className="relative overflow-hidden rounded-[26px] bg-cream-2">
-              <ProductImage key={img} images={ordered} priority sizes="(min-width:1024px) 50vw, 100vw" alt={care ? p.name : `Bó hoa ${p.name}`} className={care ? "aspect-square w-full" : "aspect-[4/5] w-full"} />
-              {p.badge && <span className="absolute top-3 left-3 rounded-full bg-[#f08ca7] px-4 py-1.5 text-[14px] font-bold text-white shadow-sm">{p.badge}</span>}
-              <button onClick={() => toggle(p.id, p.name)} aria-pressed={liked} aria-label={liked ? "Bỏ yêu thích" : "Yêu thích"} className="absolute top-3 right-3 grid h-12 w-12 place-items-center rounded-full bg-white/95 text-ink-soft shadow-sm active:scale-95"><Heart on={liked} /></button>
-            </div>
-          </div>
-          {p.images.length > 1 && (
-            <div className="mt-3 flex snap-x gap-3 overflow-x-auto pb-1" role="tablist" aria-label="Ảnh sản phẩm">
-              {p.images.map((u, i) => (
-                <button key={u} role="tab" aria-selected={img === i} aria-label={`Ảnh ${i + 1}`} onClick={() => setImg(i)}
-                  className={cn("h-[76px] w-[76px] shrink-0 snap-start overflow-hidden rounded-2xl border-2 bg-cream-2 transition", img === i ? "border-rose-deep" : "border-transparent opacity-80 hover:opacity-100")}>
-                  <ProductImage images={[u]} alt="" sizes="80px" className="h-full w-full" />
-                </button>
-              ))}
-            </div>
-          )}
+      <div className="grid gap-7 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)] lg:gap-12">
+        {/* Thư viện ảnh: ảnh chính nhỏ gọn, dải ảnh nhỏ bên dưới */}
+        <div className="mx-auto w-full max-w-[500px] lg:sticky lg:top-28 lg:mx-0 lg:self-start">
+          <ProductGallery images={p.images} name={care ? p.name : `Bó hoa ${p.name}`} badge={p.badge}
+            heart={<button onClick={() => toggle(p.id, p.name)} aria-pressed={liked} aria-label={liked ? "Bỏ yêu thích" : "Yêu thích"} className="grid h-11 w-11 place-items-center rounded-full bg-white/95 text-ink-soft shadow-sm active:scale-95"><Heart on={liked} /></button>} />
         </div>
 
         {/* Thông tin */}

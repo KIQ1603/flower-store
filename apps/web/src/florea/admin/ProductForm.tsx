@@ -51,23 +51,23 @@ function ImageManager({ images, onChange }: { images: string[]; onChange: (fn: (
           </Row>
         </Image.PreviewGroup>
       )}
-      <Upload.Dragger multiple accept="image/jpeg,image/png,image/webp" showUploadList={false} disabled={images.length + pending >= 8}
+      <Upload.Dragger multiple accept="image/jpeg,image/png,image/webp" showUploadList={false} disabled={images.length + pending >= 12}
         beforeUpload={(file, list) => {
           if (file !== list[0]) return Upload.LIST_IGNORE; // antd gọi cho từng file: chỉ xử lý cả lô một lần để giữ đúng thứ tự chọn
-          const room = 8 - images.length - pending;
+          const room = 12 - images.length - pending;
           const batch = list.slice(0, Math.max(room, 0));
-          if (list.length > batch.length) message.error(`Chỉ thêm được ${Math.max(room, 0)} ảnh nữa (tối đa 8 ảnh)`);
+          if (list.length > batch.length) message.error(`Chỉ thêm được ${Math.max(room, 0)} ảnh nữa (tối đa 12 ảnh)`);
           if (batch.length === 0) return Upload.LIST_IGNORE;
           setPending((n) => n + batch.length);
           uploadProductImages(batch as File[])
-            .then((urls) => onChange((p) => [...p, ...urls].slice(0, 8)))
+            .then((urls) => onChange((p) => [...p, ...urls].slice(0, 12)))
             .catch((e) => message.error(e instanceof Error ? e.message : "Tải ảnh thất bại"))
             .finally(() => setPending((n) => n - batch.length));
           return Upload.LIST_IGNORE;
         }}>
         <p className="ant-upload-drag-icon"><InboxOutlined /></p>
         <div className="ant-upload-text">{pending > 0 ? <Space><Spin size="small" /> Đang xử lý và tải {pending} ảnh…</Space> : "Bấm để chọn ảnh / chụp ảnh, hoặc kéo thả vào đây"}</div>
-        <p className="ant-upload-hint">JPG, PNG, WebP · tự thu nhỏ trước khi tải · còn {Math.max(8 - images.length - pending, 0)}/8 ảnh</p>
+        <p className="ant-upload-hint">JPG, PNG, WebP · tự thu nhỏ trước khi tải · còn {Math.max(12 - images.length - pending, 0)}/12 ảnh</p>
       </Upload.Dragger>
     </div>
   );
