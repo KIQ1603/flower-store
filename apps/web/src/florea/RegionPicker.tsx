@@ -8,7 +8,7 @@ type Province = { id: number; name: string; wardCount: number };
 type Ward = { id: number; name: string; deliveryFee: number };
 
 export function RegionPicker({ dark = false, onDone, cta = "Xem mẫu hoa trong khu vực" }: { dark?: boolean; onDone: () => void; cta?: string }) {
-  const { region, setRegion } = useRegion();
+  const { region, setRegion, skipRegion } = useRegion();
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [provinceId, setProvinceId] = useState<number | "">(region?.provinceId ?? "");
@@ -51,6 +51,9 @@ export function RegionPicker({ dark = false, onDone, cta = "Xem mẫu hoa trong 
       {error && <p role="alert" className={cn("text-[12.5px]", dark ? "text-[#ffb3c4]" : "text-rose-deep")}>{error}</p>}
       <button type="button" onClick={submit} className="btn bg-[#d96b87] text-white shadow-[0_16px_34px_-12px_rgba(217,107,135,0.75)] hover:bg-[#c45672]">
         <span>{cta}</span>
+      </button>
+      <button type="button" onClick={() => { skipRegion(); onDone(); }} data-testid="skip-region" className={cn("min-h-[44px] rounded-full border px-4 text-[14px] font-bold transition", dark ? "border-(--hero-line) text-(--hero-fg) hover:bg-white/10" : "border-line text-ink-soft hover:border-rose hover:text-ink")}>
+        {region ? "Bỏ chọn khu vực, xem tất cả hoa" : "Không chọn, xem tất cả hoa"}
       </button>
     </div>
   );

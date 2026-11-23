@@ -105,9 +105,9 @@ export function HomeSections() {
         </Section>
       )}
 
-      <section aria-label="Bắt đầu chọn hoa" className="bg-[#231b32] text-white">
+      <section aria-label="Bắt đầu chọn hoa" className="bg-(--ft-bg) text-(--ft-fg)">
         <div className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-5 px-4 py-12 sm:px-6">
-          <div><h2 className="font-serif text-[28px] leading-tight font-extrabold sm:text-[34px]">Sẵn sàng gửi một bó hoa?</h2><p className="mt-1.5 flex items-center gap-2 text-[16px] font-medium text-[#dec4ce]"><CheckCircleOutlined aria-hidden /> Xem ảnh thật, trả tiền khi nhận hoa.</p></div>
+          <div><h2 className="font-serif text-[28px] leading-tight font-extrabold sm:text-[34px]">Sẵn sàng gửi một bó hoa?</h2><p className="mt-1.5 flex items-center gap-2 text-[16px] font-medium text-(--ft-soft)"><CheckCircleOutlined aria-hidden /> Xem ảnh thật, trả tiền khi nhận hoa.</p></div>
           <Link to="/hoa-tuoi" className="btn bg-[#d96b87] px-8 py-4 text-[16px] text-white hover:bg-[#c45672]"><span>Chọn hoa ngay</span></Link>
         </div>
       </section>

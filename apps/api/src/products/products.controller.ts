@@ -5,7 +5,6 @@ import { IsEnum, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from '
 import { Prisma } from '@prisma/client';
 import { CurrentUser, JwtAuthGuard, type JwtUser, CustomerOnlyGuard } from '../common/roles';
 import { searchProducts, wordsOf } from './search';
-import { normalize } from '../common/text';
 import { PrismaService } from '../prisma/prisma.service';
 import { ShippingService, type Delivery, type Rate } from '../orders/shipping.service';
 

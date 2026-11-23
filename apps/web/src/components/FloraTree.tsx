@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "../florea/theme";
 import type { ReactNode } from "react";
 import { cn } from "../utils/cn";
 
@@ -104,6 +105,14 @@ function hsl(h: number, s: number, l: number, a = 1) {
   return `hsla(${h},${s}%,${l}%,${a})`;
 }
 
+/** Bảng màu cảnh nền: "dark" là đêm trăng (giao diện gốc), "light" là buổi sáng nắng nhẹ */
+const PALETTES = {
+  dark: { sky: ["#151a36", "#3a2f55", "#9b5c78", "#d8897c", "#efb08a"], stars: 1, halo: "rgba(255,236,220,.32)", orb: ["#fff8ee", "#f1dfcf"], craters: true, cloud: ["255,190,170", "190,140,180"], cloudA: 1,
+    hill1: "#8a5a72", mist: "240,170,150", hill2: "#4a3550", ground: ["#3a2a44", "#271c31", "#150f1c"], blades: ["120,90,120", "20,12,24"], pool: "255,170,190,.16", shadow: "8,4,12,.55", vig: "10,6,20", vigA: 0.52, trunk: [40, 27, 36, 34, 16, 18], petalShadow: "#0c0710", caption: "246, 223, 228" },
+  light: { sky: ["#86c5ee", "#b5defa", "#e2f1fc", "#fde8e6", "#ffe0d0"], stars: 0, halo: "rgba(255,244,200,.6)", orb: ["#fffbe8", "#ffe6a0"], craters: false, cloud: ["255,255,255", "255,255,255"], cloudA: 2.6,
+    hill1: "#f2b8c8", mist: "255,214,205", hill2: "#e59db3", ground: ["#c3e3b4", "#a8d29b", "#8fc184"], blades: ["80,150,80", "40,100,50"], pool: "255,255,255,.4", shadow: "50,60,30,.38", vig: "255,248,250", vigA: 0.38, trunk: [98, 66, 60, 40, 24, 20], petalShadow: "#5a3d36", caption: "84, 56, 70" },
+} as const;
+
 export function FloraTree({ children, showNameInput = false, contentWidth = "max-w-[580px]", caption = "mỗi cánh hoa rơi là một lời yêu thương gửi tới người nhận", defaultName = "Florea" }: FloraTreeProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [customName, setCustomName] = useState(defaultName);
@@ -114,6 +123,8 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
   const captionRef = useRef(caption);
   captionRef.current = caption;
 
+  const { theme } = useTheme();
+  const P = PALETTES[theme];
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv) return;
@@ -368,15 +379,11 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
       const x = bg.getContext("2d")!;
       x.scale(DPR, DPR);
       const sky = x.createLinearGradient(0, 0, 0, horizon);
-      sky.addColorStop(0, "#151a36");
-      sky.addColorStop(0.38, "#3a2f55");
-      sky.addColorStop(0.7, "#9b5c78");
-      sky.addColorStop(0.9, "#d8897c");
-      sky.addColorStop(1, "#efb08a");
+      [0, 0.38, 0.7, 0.9, 1].forEach((o, i) => sky.addColorStop(o, P.sky[i]));
       x.fillStyle = sky;
       x.fillRect(0, 0, W, horizon + 2);
       const r = seeded(9);
-      for (let i = 0; i < 95; i++) {
+      for (let i = 0; i < (P.stars ? 95 : 0); i++) {
         const sy = Math.pow(r(), 1.8) * horizon * 0.55;
         x.fillStyle = `rgba(255,240,235,${(0.15 + r() * 0.55) * (1 - sy / (horizon * 0.55))})`;
         x.beginPath();
@@ -387,18 +394,18 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
       const my = Math.min(H * 0.2, 135);
       const mr = Math.max(18, Math.min(W, H) * 0.042);
       const halo = x.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 6);
-      halo.addColorStop(0, "rgba(255,236,220,.32)");
-      halo.addColorStop(1, "rgba(255,236,220,0)");
+      halo.addColorStop(0, P.halo);
+      halo.addColorStop(1, P.halo.replace(/[\d.]+\)$/, "0)"));
       x.fillStyle = halo;
       x.fillRect(0, 0, W, horizon);
       const mg = x.createRadialGradient(mx - mr * 0.3, my - mr * 0.3, 0, mx, my, mr);
-      mg.addColorStop(0, "#fff8ee");
-      mg.addColorStop(1, "#f1dfcf");
+      mg.addColorStop(0, P.orb[0]);
+      mg.addColorStop(1, P.orb[1]);
       x.fillStyle = mg;
       x.beginPath();
       x.arc(mx, my, mr, 0, 7);
       x.fill();
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < (P.craters ? 7 : 0); i++) {
         x.fillStyle = `rgba(200,170,170,${0.08 + r() * 0.08})`;
         x.beginPath();
         x.arc(mx + (r() - 0.5) * mr * 1.1, my + (r() - 0.5) * mr * 1.1, mr * (0.12 + r() * 0.22), 0, 7);
@@ -409,7 +416,7 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
         const cx = r() * W;
         const cw = W * (0.35 + r() * 0.5);
         for (let j = 0; j < 26; j++) {
-          x.fillStyle = `rgba(${cy > horizon * 0.6 ? "255,190,170" : "190,140,180"},${0.025 + r() * 0.03})`;
+          x.fillStyle = `rgba(${cy > horizon * 0.6 ? P.cloud[0] : P.cloud[1]},${(0.025 + r() * 0.03) * P.cloudA})`;
           x.beginPath();
           x.ellipse(cx + (r() - 0.5) * cw, cy + (r() - 0.5) * 8, cw * (0.1 + r() * 0.2), 2 + r() * 4, 0, 0, 7);
           x.fill();
@@ -426,17 +433,17 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
         x.lineTo(W, H);
         x.fill();
       };
-      hill(horizon - 6, 10, "#8a5a72", 0.011);
+      hill(horizon - 6, 10, P.hill1, 0.011);
       const mist = x.createLinearGradient(0, horizon - 30, 0, horizon + 10);
-      mist.addColorStop(0, "rgba(240,170,150,0)");
-      mist.addColorStop(1, "rgba(240,170,150,.35)");
+      mist.addColorStop(0, `rgba(${P.mist},0)`);
+      mist.addColorStop(1, `rgba(${P.mist},.35)`);
       x.fillStyle = mist;
       x.fillRect(0, horizon - 30, W, 40);
-      hill(horizon + 2, 6, "#4a3550", 0.017);
+      hill(horizon + 2, 6, P.hill2, 0.017);
       const gr = x.createLinearGradient(0, horizon, 0, H);
-      gr.addColorStop(0, "#3a2a44");
-      gr.addColorStop(0.4, "#271c31");
-      gr.addColorStop(1, "#150f1c");
+      gr.addColorStop(0, P.ground[0]);
+      gr.addColorStop(0.4, P.ground[1]);
+      gr.addColorStop(1, P.ground[2]);
       x.fillStyle = gr;
       x.beginPath();
       x.moveTo(0, H);
@@ -449,7 +456,7 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
       for (let i = 0; i < 900; i++) {
         const gy = horizon + 10 + Math.pow(r(), 0.8) * (H - horizon);
         const gx = r() * W;
-        x.strokeStyle = `rgba(${r() < 0.5 ? "120,90,120" : "20,12,24"},${0.12 + r() * 0.18})`;
+        x.strokeStyle = `rgba(${r() < 0.5 ? P.blades[0] : P.blades[1]},${0.12 + r() * 0.18})`;
         x.lineWidth = 0.8;
         x.beginPath();
         x.moveTo(gx, gy);
@@ -457,12 +464,12 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
         x.stroke();
       }
       const pool = x.createRadialGradient(OX, baseY + 6, 0, OX, baseY + 6, W * 0.42);
-      pool.addColorStop(0, "rgba(255,170,190,.16)");
+      pool.addColorStop(0, `rgba(${P.pool})`);
       pool.addColorStop(1, "rgba(255,170,190,0)");
       x.fillStyle = pool;
       x.fillRect(0, horizon, W, H - horizon);
       const sh = x.createRadialGradient(OX, baseY + 4, 0, OX, baseY + 4, 60 * S);
-      sh.addColorStop(0, "rgba(8,4,12,.55)");
+      sh.addColorStop(0, `rgba(${P.shadow})`);
       sh.addColorStop(1, "rgba(8,4,12,0)");
       x.save();
       x.translate(OX, baseY + 4);
@@ -487,8 +494,8 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
       q.fillStyle = q.createPattern(n, "repeat")!;
       q.fillRect(0, 0, W, H);
       const vg = q.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.35, W / 2, H * 0.45, Math.max(W, H) * 0.78);
-      vg.addColorStop(0, "rgba(10,6,20,0)");
-      vg.addColorStop(1, "rgba(10,6,20,.52)");
+      vg.addColorStop(0, `rgba(${P.vig},0)`);
+      vg.addColorStop(1, `rgba(${P.vig},${P.vigA})`);
       q.fillStyle = vg;
       q.fillRect(0, 0, W, H);
     }
@@ -693,7 +700,7 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
         right.push([pts[i][0] - (nx * ws[i]) / 2, pts[i][1] - (ny * ws[i]) / 2]);
       }
       const shade = Math.min(1, b.depth / 7);
-      x.fillStyle = `rgb(${(40 + shade * 34) | 0},${(27 + shade * 16) | 0},${(36 + shade * 18) | 0})`;
+      x.fillStyle = `rgb(${(P.trunk[0] + shade * P.trunk[3]) | 0},${(P.trunk[1] + shade * P.trunk[4]) | 0},${(P.trunk[2] + shade * P.trunk[5]) | 0})`;
       x.beginPath();
       x.moveTo(left[0][0], left[0][1]);
       for (const p of left) x.lineTo(p[0], p[1]);
@@ -953,7 +960,7 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
           if (u >= 1) filled++;
           g!.setTransform(DPR, 0, 0, DPR, 0, 0);
           g!.globalAlpha = 0.35 * e;
-          g!.fillStyle = "#0c0710";
+          g!.fillStyle = P.petalShadow;
           g!.beginPath();
           g!.ellipse(p.x + 0.6, p.t.y + 1.2, p.size * 0.55, p.size * 0.22, 0, 0, 7);
           g!.fill();
@@ -1016,7 +1023,7 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
         const maxW = Math.min(W - 24, W >= 960 ? W * 0.5 : W * 0.94);
         const cw = g!.measureText(captionRef.current).width;
         if (cw > maxW) { fs = Math.max(10, (fs * maxW) / cw); g!.font = `600 ${fs}px "Baloo 2", sans-serif`; } // chữ dài thì thu nhỏ cho vừa khung
-        g!.fillStyle = `rgba(246, 223, 228, ${clamp((prog - 0.25) / 0.55) * 0.9})`;
+        g!.fillStyle = `rgba(${P.caption}, ${clamp((prog - 0.25) / 0.55) * 0.9})`;
         g!.textAlign = "center";
         g!.fillText(captionRef.current, nameBox.cx, H - 16);
         g!.restore();
@@ -1048,7 +1055,7 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("resize", layout);
     };
-  }, []);
+  }, [theme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNameChange = (val: string) => {
     setCustomName(val);
@@ -1056,14 +1063,14 @@ export function FloraTree({ children, showNameInput = false, contentWidth = "max
   };
 
   return (
-    <section id="top" className="relative w-full bg-[#1a1730] select-none">
+    <section id="top" className="relative w-full bg-(--hero-bg) select-none">
       {/* Khung cây đào: cố định theo chiều cao màn hình trên máy tính (luôn thấy cả cây lẫn chữ cánh hoa ghép);
           trên điện thoại là một khối riêng phía trên, nội dung nằm ngay bên dưới nên không che chữ */}
       <div className="relative z-0 h-[58svh] min-h-[400px] w-full lg:sticky lg:top-0 lg:h-[100svh] lg:min-h-[560px]">
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full cursor-grab active:cursor-grabbing" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-[#231a31] lg:hidden" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-(--hero-bg) lg:hidden" />
       </div>
-      <div className="pointer-events-none relative z-20 flex w-full flex-col justify-center bg-[#231a31] px-4 py-8 sm:px-8 lg:-mt-[100svh] lg:min-h-[100svh] lg:bg-transparent lg:py-24 lg:pt-28 lg:pl-12 xl:pl-16">
+      <div className="pointer-events-none relative z-20 flex w-full flex-col justify-center bg-(--hero-bg) px-4 py-8 sm:px-8 lg:-mt-[100svh] lg:min-h-[100svh] lg:bg-transparent lg:py-24 lg:pt-28 lg:pl-12 xl:pl-16">
         <div className={cn("w-full text-left", contentWidth)}>
           {children}
           {showNameInput && (

@@ -18,6 +18,7 @@ import { AdminInterRates } from "./InterRates";
 import { AdminGardenSettings } from "./GardenSettings";
 import { AdminCards } from "./Cards";
 import { AdminShopSettings } from "./ShopSettings";
+import { AdminAboutSettings } from "./AboutSettings";
 
 /** Toàn bộ khu quản trị dùng Ant Design (tách thành gói riêng, khách không phải tải) */
 export default function AdminApp() {
@@ -48,6 +49,7 @@ export default function AdminApp() {
               <Route path="garden" element={<AdminGardenSettings />} />
               <Route path="cards" element={<AdminCards />} />
               <Route path="shop" element={<AdminShopSettings />} />
+              <Route path="about" element={<AdminAboutSettings />} />
               <Route path="shipping" element={<AdminInterRates />} />
               <Route path="coupons" element={<AdminCoupons />} />
               <Route path="wards" element={<AdminWards />} />

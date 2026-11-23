@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Avatar, Badge, Button, Drawer, Dropdown, Empty, Flex, Grid, Layout, Menu, Popover, Result, Typography } from "antd";
-import { AppstoreOutlined, BellOutlined, DashboardOutlined, EnvironmentOutlined, BarChartOutlined, GlobalOutlined, FileTextOutlined, SwapOutlined, GiftOutlined, MailOutlined, ShopOutlined, ApartmentOutlined, TagsOutlined, LogoutOutlined, MenuOutlined, ShoppingOutlined, StarOutlined } from "@ant-design/icons";
+import { AppstoreOutlined, BellOutlined, DashboardOutlined, EnvironmentOutlined, BarChartOutlined, GlobalOutlined, FileTextOutlined, SwapOutlined, GiftOutlined, MailOutlined, TeamOutlined, ShopOutlined, ApartmentOutlined, TagsOutlined, LogoutOutlined, MenuOutlined, ShoppingOutlined, StarOutlined } from "@ant-design/icons";
 import { timeAgo, useNotifications } from "../notifications";
 import { useAuth } from "../auth";
 
@@ -19,6 +19,7 @@ const items = [
   { key: "/admin/cards", icon: <MailOutlined />, label: <Link to="/admin/cards">Thiệp</Link> },
   { key: "/admin/garden", icon: <GiftOutlined />, label: <Link to="/admin/garden">Vườn điểm thưởng</Link> },
   { key: "/admin/shop", icon: <ShopOutlined />, label: <Link to="/admin/shop">Thông tin shop</Link> },
+  { key: "/admin/about", icon: <TeamOutlined />, label: <Link to="/admin/about">Về chúng tôi</Link> },
   { key: "/admin/shipping", icon: <SwapOutlined />, label: <Link to="/admin/shipping">Phí liên tỉnh</Link> },
 ];
 
@@ -61,7 +62,7 @@ export function AdminLayout() {
     return <Result status="403" title="Bạn không có quyền truy cập" subTitle="Khu vực này chỉ dành cho quản trị viên." extra={<Button type="primary" onClick={() => nav("/")}>Về trang chủ</Button>} style={{ minHeight: "100vh", display: "grid", alignContent: "center" }} />;
 
   const selected = items.find((i) => loc.pathname.startsWith(i.key))?.key ?? "/admin/dashboard";
-  const brand = <Link to="/admin" className="flex shrink-0 items-center gap-2 px-2" style={{ whiteSpace: "nowrap" }}><Typography.Text strong style={{ fontSize: 22 }}>Florea</Typography.Text>{(!mobile || screens.sm) && <Typography.Text type="danger" strong style={{ fontSize: 12 }}>QUẢN TRỊ</Typography.Text>}</Link>;
+  const brand = <Link to="/admin" className="flex shrink-0 items-center gap-2 px-2" style={{ whiteSpace: "nowrap" }}><img src="/logo-sm.png" alt="Florea" style={{ height: 28, width: "auto", display: "block" }} />{(!mobile || screens.sm) && <Typography.Text type="danger" strong style={{ fontSize: 12 }}>QUẢN TRỊ</Typography.Text>}</Link>;
   const menu = <Menu mode="inline" selectedKeys={[selected]} items={items} onClick={() => setOpen(false)} style={{ border: 0 }} />;
 
   return (

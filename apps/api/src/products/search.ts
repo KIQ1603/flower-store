@@ -23,7 +23,7 @@ export const wordsOf = (s: string) => normalize(s).split(/[^a-z0-9]+/).filter(Bo
 type W = { n: string; r: string };
 // Ngày dạng 8/3, 20-10, 20.10, "20 tháng 10" được giữ thành MỘT từ "20/10" (chỉ khi là ngày tháng hợp lệ, để "1.5" hay "2024" không bị hiểu nhầm)
 const isDay = (t: string) => { const m = /^(\d{1,2})\/(\d{1,2})$/.exec(t); return !!m && +m[1] >= 1 && +m[1] <= 31 && +m[2] >= 1 && +m[2] <= 12; };
-const datesToWords = (s: string) => s.replace(/(\d{1,2})\s*(?:[/.\-]|\s+th[aá]ng\s+)\s*(\d{1,2})(?!\d)/giu, (m, d, mo) => (+d >= 1 && +d <= 31 && +mo >= 1 && +mo <= 12 ? ` ${+d}/${+mo} ` : m));
+const datesToWords = (s: string) => s.replace(/(\d{1,2})\s*(?:[/.-]|\s+th[aá]ng\s+)\s*(\d{1,2})(?!\d)/giu, (m, d, mo) => (+d >= 1 && +d <= 31 && +mo >= 1 && +mo <= 12 ? ` ${+d}/${+mo} ` : m));
 const rawWords = (s: string): W[] => datesToWords(s.toLowerCase().normalize('NFC')).split(/[^\p{L}\p{N}/]+/u).flatMap(t => (t.includes('/') && !isDay(t) ? t.split('/') : [t])).filter(Boolean).map(r => ({ n: normalize(r), r }));
 
 /** Chuẩn hoá câu tìm kiếm thành các từ khoá có nghĩa (giữ cả dạng có dấu) */

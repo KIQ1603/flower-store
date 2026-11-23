@@ -3,6 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 const AdminApp = lazy(() => import("./admin/AdminApp")); // antd chỉ tải khi vào /admin
 import { AuthProvider } from "./auth";
+import { ThemeProvider } from "./theme";
+import { AboutPage } from "./pages/AboutPage";
 import { RegionProvider } from "./region";
 import { ToastProvider } from "./toast";
 import { WishlistProvider } from "./wishlist";
@@ -27,6 +29,7 @@ import { Favorites } from "./pages/Favorites";
 export default function FloreaApp() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
       <AuthProvider>
         <ToastProvider><CartProvider><WishlistProvider><RegionProvider>
           <Routes>
@@ -39,6 +42,7 @@ export default function FloreaApp() {
               <Route path="vuon-diem-thuong" element={<RequireAuth reason="garden"><GardenPage /></RequireAuth>} />
               <Route path="goc-cua-florea" element={<BlogList />} />
               <Route path="goc-cua-florea/:slug" element={<BlogPost />} />
+              <Route path="gioi-thieu" element={<AboutPage />} />
               <Route path="yeu-thich" element={<RequireAuth reason="wish" customerOnly><Favorites /></RequireAuth>} />
               <Route path="gio-hang" element={<RequireAuth reason="cart"><Cart /></RequireAuth>} />
               <Route path="thiep" element={<RequireAuth reason="card" customerOnly><CardDesigner /></RequireAuth>} />
@@ -56,6 +60,7 @@ export default function FloreaApp() {
           </Routes>
         </RegionProvider></WishlistProvider></CartProvider></ToastProvider>
       </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

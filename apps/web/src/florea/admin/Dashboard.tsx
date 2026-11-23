@@ -39,8 +39,8 @@ export function AdminDashboard() {
       </Flex>
       {!d ? <Card><Skeleton active paragraph={{ rows: 6 }} /></Card> : (
         <Space orientation="vertical" size={16} style={{ width: "100%" }}>
-          {d.needsAction.placed > 0 && <Alert type="warning" showIcon icon={<WarningOutlined />} message={`Có ${d.needsAction.placed} đơn mới đang chờ bạn nhận`} action={<Link to="/admin/orders?tab=todo&sort=created"><Button size="small" type="primary">Xử lý ngay</Button></Link>} />}
-          {d.reviews.needsAttention > 0 && <Alert type="error" showIcon icon={<WarningOutlined />} message={`Có ${d.reviews.needsAttention} đánh giá thấp (≤2 sao) cần liên hệ khách`} action={<Link to="/admin/reviews?filter=attention"><Button size="small" danger>Xem đánh giá</Button></Link>} />}
+          {d.needsAction.placed > 0 && <Alert type="warning" showIcon icon={<WarningOutlined />} title={`Có ${d.needsAction.placed} đơn mới đang chờ bạn nhận`} action={<Link to="/admin/orders?tab=todo&sort=created"><Button size="small" type="primary">Xử lý ngay</Button></Link>} />}
+          {d.reviews.needsAttention > 0 && <Alert type="error" showIcon icon={<WarningOutlined />} title={`Có ${d.reviews.needsAttention} đánh giá thấp (≤2 sao) cần liên hệ khách`} action={<Link to="/admin/reviews?filter=attention"><Button size="small" danger>Xem đánh giá</Button></Link>} />}
           <Row gutter={[12, 12]}>
             {todo.map((x) => (
               <Col key={x.label} xs={12} md={8} xl={4}>

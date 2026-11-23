@@ -1,3 +1,4 @@
+import { useTheme } from "./theme";
 import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { useAuth } from "./auth";
@@ -28,6 +29,7 @@ const GLogo = () => (
 export function GoogleButton({ onSuccess, onError }: { onSuccess: () => void; onError: (m: string) => void }) {
   const { loginWithGoogle } = useAuth();
   const box = useRef<HTMLDivElement>(null);
+  const { theme } = useTheme();
   const [clientId, setClientId] = useState<string | null | undefined>(undefined);
 
   useEffect(() => { api("/auth/config").then((c) => setClientId(c.googleClientId)).catch(() => setClientId(null)); }, []);
@@ -43,13 +45,13 @@ export function GoogleButton({ onSuccess, onError }: { onSuccess: () => void; on
           try { await loginWithGoogle(r.credential); onSuccess(); } catch (e: any) { onError(e.message ?? "Đăng nhập Google thất bại"); }
         },
       });
-      window.google.accounts.id.renderButton(box.current, { theme: "outline", size: "large", shape: "pill", text: "continue_with", width: box.current.clientWidth || 360, locale: "vi" });
+      window.google.accounts.id.renderButton(box.current, { theme: theme === "dark" ? "filled_black" : "outline", size: "large", shape: "pill", text: "continue_with", width: box.current.clientWidth || 360, locale: "vi" });
     }).catch(() => onError("Không tải được Google. Kiểm tra kết nối mạng."));
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId]);
+  }, [clientId, theme]);
 
-  if (clientId) return <div ref={box} className="flex min-h-[44px] w-full justify-center" />;
+  if (clientId) return <div ref={box} style={{ colorScheme: "light" }} className="flex min-h-[44px] w-full justify-center" />;
   return (
     <button type="button" onClick={() => onError(clientId === undefined ? "Đang tải…" : "Đăng nhập Google chưa được cấu hình (thiếu GOOGLE_CLIENT_ID ở máy chủ).")}
       className="flex w-full items-center justify-center gap-3 rounded-full border border-line bg-white px-4 py-3 text-[14.5px] font-semibold text-ink transition hover:border-rose hover:shadow-sm">

@@ -14,7 +14,7 @@ const SORTS = [{ v: "newest", l: "Mới nhất" }, { v: "price_asc", l: "Giá th
 const LIMIT = 8;
 
 export function CarePage() {
-  const { region } = useRegion();
+  const { region, openPicker, browseAll } = useRegion();
   const [sp, setSp] = useSearchParams();
   const get = (k: string) => sp.get(k) ?? "";
   const [cats, setCats] = useState<Cat[]>([]);
@@ -37,7 +37,7 @@ export function CarePage() {
   const cat = get("category"); const page = Number(get("page") || 1);
   const goPage = (n: number) => { set({ page: String(n) }, true); top.current?.scrollIntoView({ behavior: "smooth" }); };
 
-  if (!region)
+  if (!region && !browseAll)
     return (
       <main className="mx-auto w-full max-w-[1400px] px-4 pt-28 pb-24 sm:px-6 lg:px-8 lg:pt-32">
         <header className="mb-6"><h1 className="font-serif text-[38px] leading-none font-extrabold sm:text-[48px]">Chăm sóc hoa & phụ kiện</h1></header>
@@ -51,6 +51,7 @@ export function CarePage() {
         <h1 className="font-serif text-[38px] leading-none font-extrabold sm:text-[48px]">Chăm sóc hoa & phụ kiện</h1>
         <p className="mt-2 max-w-[640px] text-[15px] font-medium text-ink-soft">Lọ thủy tinh, nước dưỡng, dụng cụ cắt tỉa, tinh dầu… mọi thứ để hoa tươi lâu và góc nhà thêm xinh. Do Florea tự bán, giao cùng đơn hoa hoặc riêng lẻ.</p>
       </header>
+      {!region && <p role="note" data-testid="browse-all-note" className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-cream-2 px-4 py-3 text-[14.5px] font-semibold text-ink-soft">Bạn đang xem tất cả sản phẩm, chưa chọn khu vực nhận hoa. <button onClick={openPicker} className="font-extrabold text-rose-deep underline">Chọn khu vực</button> để chỉ xem mẫu giao tới bạn.</p>}
 
 
       <div className="mb-5 flex flex-wrap items-center gap-3">

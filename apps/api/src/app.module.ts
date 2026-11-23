@@ -33,6 +33,7 @@ import { ReviewJobsService } from './reviews/review-jobs.service';
 import { AdminReviewsController } from './admin/admin-reviews.controller';
 import { GardenController } from './garden/garden.controller';
 import { GardenService } from './garden/garden.service';
+import { AboutController, AboutService, AdminAboutController } from './content/about';
 import { AdminShopInfoController, ShopInfoController, ShopInfoService } from './content/shop-info';
 import { GardenConfigService } from './garden/garden-config';
 import { AdminGardenController } from './garden/admin-garden.controller';
@@ -56,7 +57,7 @@ class HealthController {
 
 @Module({
   imports: [PrismaModule, JwtModule.register({ global: true })],
-  controllers: [HealthController, AuthController, UsersController, AdminController, RegionsController, AdminWardsController, ProductsController, WishlistController, AdminProductsController, UploadsController, CartController, OrdersController, AdminGeoController, AdminOrdersController, AdminDashboardController, NotificationsController, PreviewsController, ReviewsController, AdminReviewsController, GardenController, ContentController, AdminContentController, AdminTaxonomyController, AdminInterRatesController, AdminGardenController, AdminCardsController, ShopInfoController, AdminShopInfoController],
-  providers: [ShopInfoService, GardenConfigService, ShippingService, TaxonomyService, AdminBootstrapService, AlertService, { provide: APP_FILTER, useClass: ErrorAlertFilter }, RateLimitGuard, GardenService, ReviewsService, ReviewJobsService, PreviewsService, PreviewJobsService, NotifyService, OutboxService, OrderFlowService, GeoService, PricingService, StorageService, AuthService, MailService, GoogleVerifier, JwtAuthGuard, RolesGuard],
+  controllers: [HealthController, AuthController, UsersController, AdminController, RegionsController, AdminWardsController, ProductsController, WishlistController, AdminProductsController, UploadsController, CartController, OrdersController, AdminGeoController, AdminOrdersController, AdminDashboardController, NotificationsController, PreviewsController, ReviewsController, AdminReviewsController, GardenController, ContentController, AdminContentController, AdminTaxonomyController, AdminInterRatesController, AdminGardenController, AdminCardsController, ShopInfoController, AdminShopInfoController, AboutController, AdminAboutController],
+  providers: [AboutService, ShopInfoService, GardenConfigService, ShippingService, TaxonomyService, AdminBootstrapService, AlertService, { provide: APP_FILTER, useClass: ErrorAlertFilter }, RateLimitGuard, GardenService, ReviewsService, ReviewJobsService, PreviewsService, PreviewJobsService, NotifyService, OutboxService, OrderFlowService, GeoService, PricingService, StorageService, AuthService, MailService, GoogleVerifier, JwtAuthGuard, RolesGuard],
 })
 export class AppModule {}

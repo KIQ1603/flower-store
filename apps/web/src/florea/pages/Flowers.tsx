@@ -21,7 +21,7 @@ const LIMIT = 6;
 const short = (n: string) => n.replace("TP. Hồ Chí Minh", "TP. HCM");
 
 export function Flowers() {
-  const { region, openPicker } = useRegion();
+  const { region, openPicker, browseAll } = useRegion();
   const [sp, setSp] = useSearchParams();
   const [filters, setFilters] = useState<Filters>({ occasions: [], recipients: [], categories: [] });
   const [res, setRes] = useState<Result | null>(null);
@@ -77,7 +77,7 @@ export function Flowers() {
   );
 
   // Khách phải chọn tỉnh/thành + phường nhận hoa trước: mỗi sản phẩm chỉ giao tại một địa điểm
-  if (!region)
+  if (!region && !browseAll)
     return (
       <main className="mx-auto w-full max-w-[1680px] px-4 pt-28 pb-24 sm:px-6 lg:px-8 lg:pt-32">
         <header className="mb-6"><h1 className="font-serif text-[38px] leading-none font-extrabold text-ink sm:text-[48px]">Hoa tươi</h1><p className="mt-2 text-[15px] font-medium text-ink-soft">Hoa cắm tươi trong ngày, giao tận tay người nhận.</p></header>
@@ -101,6 +101,7 @@ export function Flowers() {
           <span className="ml-1 text-[13px] font-bold text-rose-deep">Đổi</span>
         </button>
       </header>
+      {!region && <p role="note" data-testid="browse-all-note" className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-cream-2 px-4 py-3 text-[14.5px] font-semibold text-ink-soft">Bạn đang xem tất cả mẫu hoa, chưa chọn khu vực nhận hoa. <button onClick={openPicker} className="font-extrabold text-rose-deep underline">Chọn khu vực</button> để chỉ xem mẫu giao tới bạn.</p>}
 
       <div className="grid gap-6 lg:grid-cols-[290px_1fr] xl:grid-cols-[300px_1fr]">
         {/* Bộ lọc: cột trái trên máy tính; thu gọn trên điện thoại */}

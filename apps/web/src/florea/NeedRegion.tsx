@@ -4,7 +4,7 @@ import { useRegion } from "./region";
 
 /** Khách phải chọn tỉnh/thành và phường nhận hoa trước khi xem hoa: mỗi sản phẩm chỉ giao tại một địa điểm */
 export function NeedRegion({ what = "hoa" }: { what?: string }) {
-  const { openPicker } = useRegion();
+  const { openPicker, skipRegion } = useRegion();
   // Lần đầu vào trang trong phiên: tự mở hộp chọn khu vực (openPicker đổi mỗi lần vẽ lại nên giữ qua ref, hẹn giờ chỉ đặt một lần)
   const open = useRef(openPicker); open.current = openPicker;
   useEffect(() => {
@@ -18,7 +18,10 @@ export function NeedRegion({ what = "hoa" }: { what?: string }) {
         <p className="text-[48px] text-rose-deep" aria-hidden><EnvironmentOutlined /></p>
         <h2 className="font-serif text-[28px] leading-tight font-extrabold text-ink">Bạn nhận {what} ở đâu?</h2>
         <p className="mt-2 text-[16px] leading-relaxed font-medium text-ink-soft">Mỗi sản phẩm chỉ giao tại một địa điểm. Hãy chọn <b className="text-ink">tỉnh/thành</b> và <b className="text-ink">phường/khu vực</b> nhận hoa để xem những mẫu giao tới bạn.</p>
-        <button onClick={openPicker} className="btn mt-6 bg-[#d96b87] px-8 py-4 text-[16px] text-white hover:bg-[#c45672]"><span>Chọn khu vực nhận hoa</span></button>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <button onClick={openPicker} className="btn bg-[#d96b87] px-8 py-4 text-[16px] text-white hover:bg-[#c45672]"><span>Chọn khu vực nhận hoa</span></button>
+          <button onClick={skipRegion} data-testid="skip-region" className="min-h-[52px] rounded-full border border-line bg-white px-6 text-[15px] font-bold text-ink-soft hover:border-rose hover:text-ink">Xem tất cả, chọn sau</button>
+        </div>
       </div>
     </section>
   );
