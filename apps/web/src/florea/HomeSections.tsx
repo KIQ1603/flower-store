@@ -67,11 +67,11 @@ export function HomeSections() {
       <Section label="Hoa nổi bật">
         <Head title="Hoa được yêu thích" sub={region ? `Các mẫu giao được tới ${region.wardName}, ${region.provinceName}.` : "Chọn khu vực nhận hoa ở đầu trang để chỉ xem mẫu giao tới bạn."} to="/hoa-tuoi" cta="Xem tất cả hoa tươi" />
         {products === null ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-busy>{[0, 1, 2, 3].map((i) => <div key={i} className="h-[340px] animate-pulse rounded-[28px] bg-white/70" />)}</div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-busy>{[0, 1, 2, 3].map((i) => <div key={i} className="h-[260px] animate-pulse rounded-[24px] bg-white/70" />)}</div>
         ) : products.length === 0 ? (
           <p className="rounded-3xl border border-line bg-white p-8 text-center text-[16px] font-medium text-ink-soft">{region ? "Chưa có mẫu hoa nào giao tới khu vực này." : "Chưa có mẫu hoa nào."} <Link to="/hoa-tuoi" className="font-extrabold text-rose-deep hover:underline">Xem hoa tươi</Link></p>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{products.map((p) => <ProductCard key={p.id} p={p} />)}</div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">{products.map((p) => <ProductCard key={p.id} p={p} />)}</div>
         )}
       </Section>
 

@@ -135,7 +135,7 @@ export function Flowers() {
               <button onClick={load} className="btn mt-4 bg-[#d96b87] text-white"><span>Thử lại</span></button>
             </div>
           ) : loading && !res ? (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="aspect-[3/4] animate-pulse rounded-[32px] bg-white/70" />)}</div>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="aspect-[4/5] animate-pulse rounded-[24px] bg-white/70" />)}</div>
           ) : res && !res.meta.deliverable ? (
             <div className="rounded-3xl border border-line bg-white p-10 text-center">
               <p className="text-[18px] font-bold">Rất tiếc, hiện chưa giao hoa tới khu vực này </p>
@@ -149,7 +149,7 @@ export function Flowers() {
             </div>
           ) : (
             <>
-              <div className={cn("grid gap-5 transition-opacity sm:grid-cols-2 xl:grid-cols-3 sm:gap-6", loading && "opacity-60")}>
+              <div className={cn("grid gap-3 transition-opacity grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 sm:gap-4", loading && "opacity-60")}>
                 {res?.data.map((p) => <ProductCard key={p.id} p={p} deliverText={deliverText} />)}
               </div>
               {res && res.meta.totalPages > 1 && (

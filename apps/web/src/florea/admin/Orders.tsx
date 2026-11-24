@@ -51,7 +51,6 @@ export function AdminOrders() {
     { title: "Trạng thái", dataIndex: "status", width: 200, render: (s: string, r) => <Space orientation="vertical" size={2}><StatusTag s={s} />{r.skipPreview && <Typography.Text type="secondary" style={{ fontSize: 12 }}>Giao ngay (không xem ảnh)</Typography.Text>}</Space> },
     { title: "Người nhận", key: "rcv", render: (_: unknown, r) => <div style={{ minWidth: 150 }}><Typography.Text strong>{r.recipientName}</Typography.Text><div><Typography.Text type="secondary">{r.recipientPhone} · {r.area}</Typography.Text></div></div> },
     { title: "Sản phẩm", dataIndex: "itemsText", ellipsis: true, responsive: ["lg"], width: 240 },
-    { title: "Giờ giao", dataIndex: "deliverAt", width: 150, render: (d: string | null, r) => <Typography.Text type={overdue(r) ? "danger" : undefined} strong={overdue(r)}>{fmtDT(d)}{overdue(r) && <div style={{ fontSize: 12 }}>Quá giờ giao!</div>}</Typography.Text> },
     { title: "Tổng tiền", dataIndex: "total", width: 120, align: "right", render: (v: number) => <Typography.Text strong>{money(v)}</Typography.Text> },
   ];
 
